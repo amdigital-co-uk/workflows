@@ -40,10 +40,10 @@ jobs:
     steps:
       # Checks-out repository
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       # Login to GitHub packages
       - name: Login to GitHub packages
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           source-url: ${{ inputs.pkg-src }}
           dotnet-version: ${{ inputs.dotnet-version }}
@@ -69,9 +69,10 @@ jobs:
           dotnet run --generate-api-ts .. ${{ inputs.prefix }} ${{ inputs.namespace }} "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" ${{ inputs.npm-scope }}/${{ inputs.package }} $VERSION
           cat ../package.json
           cat ../src/requests.ts
+      
       # Setup .npmrc file to publish to Github packages
       - name: Setup Node and NPM
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '12.x'
           registry-url: ${{ inputs.npm-src }}

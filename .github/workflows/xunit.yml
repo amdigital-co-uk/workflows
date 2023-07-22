@@ -59,7 +59,7 @@ jobs:
       # Historic data stored in a CSV file in S3, and is updated if coverage improves.
       - name: Configure AWS credentials
         if: ${{ inputs.branch-threshold <= 0 || inputs.config-file != ''}}
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ inputs.aws-role-arn }}
           role-duration-seconds: 900

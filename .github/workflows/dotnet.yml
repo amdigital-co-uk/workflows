@@ -110,7 +110,7 @@ jobs:
       # Login to ECR_REGION_1
       # See https://github.com/marketplace/actions/amazon-ecr-login-action-for-github-actions
       - name: Configure AWS credentials ${{ inputs.ecr-region-1 }}
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ inputs.aws-role-arn }}
           role-duration-seconds: 900
@@ -122,7 +122,7 @@ jobs:
       # Login to ECR_REGION_2
       - name: Configure AWS credentials ${{ inputs.ecr-region-2 }}
         if: ${{ inputs.ecr-region-2 != '' }}
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ inputs.aws-role-arn }}
           role-duration-seconds: 900
