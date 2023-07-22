@@ -1,0 +1,176 @@
+# CI workflow for Quartex .NET application
+name: Build Component
+permissions:
+  id-token: write
+  contents: read
+
+# Define triggers for when the workflow will run
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+      project:          # Name of the .csproj file to be built
+        required: true
+        type: string
+      react-project:    # Name of the React project to be built
+        required: false
+        type: string
+        default: ""
+      component:        # Component name
+        required: true
+        type: string
+      configs:          # Configuration repository name: Populate if raw config files are required by the application
+        type: string
+      docker-namespace: # Docker Namespace: Typically this will be 'qtms' for a microservice or 'qtui' for a webapp
+        required: true
+        type: string
+      docker-image:     # Docker Image
+        required: true
+        type: string
+      docker-tag:       # Default Docker tag: - this should be latest in most cases
+        required: true
+        type: string
+      ecr-region-1:     # Primary AWS ECR region
+        required: true
+        type: string
+      ecr-region-2:     # Secondary AWS ECR region to push the Docker image to (optional)
+        type: string
+      build-npmrc:
+        required: false
+        type: boolean
+        default: false
+      dockerfile:
+        required: false
+        type: string
+        default: Dockerfile
+      dotnet-version:
+        required: false
+        type: string
+        default: null
+      aws-role-arn:
+        required: true
+        type: string
+    secrets:
+      SRC_TOKEN:
+        required: false
+      PKG_TOKEN:
+        required: true
+
+jobs:
+  build:
+    name: Build Component
+    runs-on: ubuntu-latest
+    env:
+      REF: ${{ inputs.REF }}
+      DK_TAG: ${{ inputs.docker-tag }}
+    steps:
+      # Checks-out repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.REF }}
+
+      # Determine correct Docker tag based on branch/release
+      - name: Set tag based on branch
+        run: |
+          if [[ "$REF" == refs/heads/* ]]
+          then
+            SCC_BRANCH=$(echo ${REF#refs/heads/})
+            echo "Branch/Tag parsing: HEAD case -- REF=$REF"
+          elif [[ "$REF" == refs/tags/* ]]
+          then
+            SCC_TAG=$(echo ${REF#refs/tags/})
+            echo "Branch/Tag parsing: TAG case -- REF=$REF"
+          else
+            SCC_BRANCH=$REF
+            echo "Branch/Tag parsing: DEFAULT case -- REF=$REF"
+          fi
+          [[ "$SCC_BRANCH" == feature/* ]] && DK_TAG=feature-$(echo ${SCC_BRANCH#feature/})
+          [[ "$SCC_BRANCH" == bug/* ]] && DK_TAG=fix-$(echo ${SCC_BRANCH#bug/})
+          [[ "$SCC_BRANCH" == release/* ]] && DK_TAG=release-$(echo ${SCC_BRANCH#release/})
+          [[ "$SCC_TAG" == v* ]] && DK_TAG=$SCC_TAG
+          echo "BRANCH=$SCC_BRANCH"
+          echo "TAG=$SCC_TAG"
+          echo "DK_TAG=$DK_TAG"
+          echo "DK_TAG=$DK_TAG" >> $GITHUB_ENV
+      
+      # Checkout shared configuration (if required)
+      - name: Checkout shared configuration
+        if: ${{ inputs.CONFIGS != '' }}
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.configs }}
+          token: ${{ secrets.SRC_TOKEN }}
+          path: config
+      - name: Copy shared configuration into project
+        if: ${{ inputs.configs != '' }}
+        run: cp config/*/*.json ${{ inputs.project }}
+
+      # Login to ECR_REGION_1
+      # See https://github.com/marketplace/actions/amazon-ecr-login-action-for-github-actions
+      - name: Configure AWS credentials ${{ inputs.ecr-region-1 }}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.aws-role-arn }}
+          role-duration-seconds: 900
+          aws-region: ${{ inputs.ecr-region-1 }}
+      - name: Login to Amazon ECR ${{ inputs.ecr-region-1 }}
+        id: login-ecr-1
+        uses: aws-actions/amazon-ecr-login@v1
+        
+      # Login to ECR_REGION_2
+      - name: Configure AWS credentials ${{ inputs.ecr-region-2 }}
+        if: ${{ inputs.ecr-region-2 != '' }}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.aws-role-arn }}
+          role-duration-seconds: 900
+          aws-region: ${{ inputs.ecr-region-2 }}
+      - name: Login to Amazon ECR ${{ inputs.ecr-region-2 }}
+        if: ${{ inputs.ecr-region-2 != '' }}
+        id: login-ecr-2
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # Login to GitHub packages
+      - name: Login to GitHub packages
+        uses: actions/setup-dotnet@v3
+        with:          
+          dotnet-version: ${{ inputs.dotnet-version }}
+          source-url: https://nuget.pkg.github.com/amdigital-co-uk/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.PKG_TOKEN}}
+        
+      # Npmrc Setup
+      - name: Npm Access Setup
+        id: npmrcsetup
+        if: ${{ inputs.build-npmrc == true }}
+        run: |
+          cat >.npmrc <<EOL
+          //npm.pkg.github.com/:_authToken=${{ secrets.PKG_TOKEN }}
+          @amdigital-co-uk:registry=https://npm.pkg.github.com/
+          EOL
+          
+      # Build container via Docker & push to ECR
+      - name: Build Docker Image
+        id: build
+        env:
+          COMPONENT: ${{ inputs.component }}
+          PROJECT: ${{ inputs.project }}
+          REACT_PROJECT: ${{ inputs.react-project }}
+          DK_FILE: ${{ inputs.dockerfile }}
+          DK_NAMESPACE: ${{ inputs.docker-namespace }}
+          DK_IMAGE: ${{ inputs.docker-image }}
+          DK_REG_1: ${{ steps.login-ecr-1.outputs.registry }}
+          DK_REG_2: ${{ steps.login-ecr-2.outputs.registry }}
+        run: |
+          cp ../nuget.config .          
+          REACT_ARG=""
+          [ -n "$REACT_PROJECT" ] && REACT_ARG="--build-arg BUILD_REACT_PROJECT=$REACT_PROJECT"
+          docker build . -f $DK_FILE -t $DK_REG_1/$DK_NAMESPACE/$DK_IMAGE:$DK_TAG --build-arg BUILD_PROJECT=$PROJECT --build-arg BUILD_TAG=$DK_TAG --build-arg BUILD_COMPONENT=$COMPONENT $REACT_ARG
+          docker push $DK_REG_1/$DK_NAMESPACE/$DK_IMAGE:$DK_TAG
+          if [ -n "$DK_REG_2" ]
+          then
+            docker tag $DK_REG_1/$DK_NAMESPACE/$DK_IMAGE:$DK_TAG $DK_REG_2/$DK_NAMESPACE/$DK_IMAGE:$DK_TAG
+            docker push $DK_REG_2/$DK_NAMESPACE/$DK_IMAGE:$DK_TAG
+          fi

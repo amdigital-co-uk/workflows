@@ -1,0 +1,88 @@
+# CI workflow for Quartex NuGet packages
+name: Build NPM
+
+on:
+  workflow_call:
+    inputs:
+      pkg-src:        # URL of private GitHub packages feed to push to
+        required: true
+        type: string
+      project:          # .NET project that generates the TypeScript
+        required: true
+        type: string
+      namespace:        # Namespace of request objects to include
+        required: true
+        type: string
+      dotnet-version:   # Dotnet version of project
+        required: false
+        type: string
+      prefix:           # TypeScript-safe prefix for client and request config classnames
+        required: true
+        type: string
+      npm-src:          # NPM Feed to push packages to
+        required: true
+        type: string
+      npm-scope:        # NPM Scope
+        required: true
+        type: string
+      package:          # Package (must include scope)
+        required: true
+        type: string
+      
+    secrets:
+      PKG_TOKEN:
+        required: true
+
+jobs:
+  npm:
+    name: Build NPM
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      # Login to GitHub packages
+      - name: Login to GitHub packages
+        uses: actions/setup-dotnet@v1
+        with:
+          source-url: ${{ inputs.pkg-src }}
+          dotnet-version: ${{ inputs.dotnet-version }}
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.PKG_TOKEN }}
+      # Generate NPM code
+      - name: Generate NPM package
+        env:
+          NAMESPACE: ${{ inputs.namespace }}
+        run: | # Create minimal Program.cs file to just run the RequestScriptsGenerator
+          VERSION=$(cat $NAMESPACE/$NAMESPACE.csproj | grep "<Version>" | cut -d ">" -f 2 | cut -d "<" -f1)
+          cd ${{ inputs.project }}
+          cat << EOF > Program.cs
+          public class Program
+          {
+              public static void Main(string[] args) {
+                System.Reflection.Assembly.Load("$NAMESPACE");
+                new Quartex.ServiceClient.ScriptGenerator.RequestScriptsGenerator().Run(args);
+              }
+          }
+          EOF
+          dotnet restore && dotnet build
+          dotnet run --generate-api-ts .. ${{ inputs.prefix }} ${{ inputs.namespace }} "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" ${{ inputs.npm-scope }}/${{ inputs.package }} $VERSION
+          cat ../package.json
+          cat ../src/requests.ts
+      # Setup .npmrc file to publish to Github packages
+      - name: Setup Node and NPM
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12.x'
+          registry-url: ${{ inputs.npm-src }}
+          scope: ${{ inputs.npm-scope }}
+
+      - name: Install dependencies
+        run: npm install && npm run build
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PKG_TOKEN }}
+
+      - name: Publish package to npm registry
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

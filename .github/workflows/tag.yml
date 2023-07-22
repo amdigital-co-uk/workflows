@@ -1,0 +1,52 @@
+name: Add Git tags
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic Version tag (e.g. v1.2.3)
+        type: string
+        required: true
+
+jobs:
+  tag-version:
+    name: Add Git tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Add version tags
+        env:
+          TAGS: ${{ inputs.version }}
+        run: |
+          for t in $(echo $TAGS | tr '.' '\n')
+          do
+
+              if [ -z "$tag" ]
+              then
+                  tag=$t
+              else
+                  tag=$tag.$t
+              fi
+
+              if [ "$(git tag | grep "^$tag$" | wc -l)" = "0" ]
+              then
+                  #echo $tag does not exist
+                  git tag $tag
+                  git push origin $tag
+              else
+                  #echo $tag exists
+                  git tag --delete $tag
+                  git push --delete origin $tag
+                  git tag $tag
+                  git push origin $tag
+              fi
+
+          done
+      
