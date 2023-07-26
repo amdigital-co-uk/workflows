@@ -21,13 +21,12 @@ jobs:
       - name: Detect labels & tags
         id: detect-labels
         env:
-          MAJOR: ${{ github.event.label.name == 'major' }}
-          MINOR: ${{ github.event.label.name == 'minor' }}
-          PATCH: ${{ github.event.label.name == 'patch' }}
+          MAJOR: ${{ contains(github.event.pull_request.labels.*.name, 'major') }}
+          MINOR: ${{ contains(github.event.pull_request.labels.*.name, 'minor') }}
+          PATCH: ${{ contains(github.event.pull_request.labels.*.name, 'patch') }}
         run: |
           # Get the latest tag and remove the leading 'v'
           version=$(git describe --tags --abbrev=0 | cut -dv -f2-)
-          echo -n "version=$version, "
 
           # Set the version output
           echo "::set-output name=version::$version"
@@ -35,18 +34,18 @@ jobs:
           # Set the bump output based on the label
           if [ "$MAJOR" = "true" ]
           then
-              echo "major"
+              echo "version=$version, bump=major"
               echo "::set-output name=bump::major"
           elif [ "$MINOR" = "true" ]
           then
-              echo "minor"
+              echo "version=$version, bump=minor"
               echo "::set-output name=bump::minor"
           elif [ "$PATCH" = "true" ]
           then
-              echo "patch"
+              echo "version=$version, bump=patch"
               echo "::set-output name=bump::patch"
           else
-              echo "none"
+              echo "version=$version, bump=none"
               echo "::set-output name=bump::none"
           fi
 
