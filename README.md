@@ -11,7 +11,7 @@ This is an experimental replacement for [quartex-workflows](https://github.com/a
 - [bash](https://www.gnu.org/software/bash/)
 - [semver CLI tool](https://github.com/fsaintjacques/semver-tool#installation)
 
-# Usage
+## Usage
 
 Note that our secrets are defined at organisation level. So whilst shouldn't need defining within the repository, they do need to be explicitly passed in to the called workflow.
 
