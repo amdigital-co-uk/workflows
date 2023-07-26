@@ -7,9 +7,11 @@ on:
   pull_request:
     branches:
       - main
+    types: [ closed ]
 
 jobs:
   tag-version:
+    if: github.event.pull_request.merged == true
     name: Add Git tags
     runs-on: ubuntu-latest
     steps:
@@ -71,15 +73,15 @@ jobs:
 
               if [ "$(git tag | grep "^$tag$" | wc -l)" = "0" ]
               then
-                  echo $tag does not exist
-                  #git tag $tag
-                  #git push origin $tag
+                  #echo $tag does not exist
+                  git tag $tag
+                  git push origin $tag
               else
-                  echo $tag exists
-                  #git tag --delete $tag
-                  #git push --delete origin $tag
-                  #git tag $tag
-                  #git push origin $tag
+                  #echo $tag exists
+                  git tag --delete $tag
+                  git push --delete origin $tag
+                  git tag $tag
+                  git push origin $tag
               fi
 
           done
