@@ -10,7 +10,18 @@ This is an experimental replacement for [quartex-workflows](https://github.com/a
 - [GitHub Actions](https://docs.github.com/en/actions)
 - [bash](https://www.gnu.org/software/bash/)
 
+# Usage
+
+Note that our secrets are defined at organisation level. So whilst shouldn't need defining within the repository, they do need to be explicitly passed in to the called workflow.
+
+* [Shared .NET workflows](./DOTNET.md)
+* [Generic Docker build and push to ECR](./OTHER.md#build-a-docker-application-and-push-to-ecr)
+* [Publish an AWS Lambda using Serverless](./OTHER.md#deploy-a-nodejs-lambda-function-using-docker--serverless)
+* [Run NodeJS unit tests](./OTHER.md#run-unit-tests-for-a-nodejs-application)
+
 ## Contributing
+
+When editing workflows, the use of VSCode is highly encouraged, along with the [GitHub Actions extension](https://marketplace.visualstudio.com/items?itemName=cschleiden.vscode-github-actions) which provides syntax highlighting, validation and intellisense for parameters.
 
 ### Naming Conventions and other Style Rules
 
@@ -37,8 +48,12 @@ Use this approach to fully test any major changes before attempting to merge you
 
 ### Tagging
 
-This repository uses git tags with [semantic versioning](https://semver.org/).
+This repository uses git tags with [semantic versioning](https://semver.org/). When creating a pull request to merge changes into `main`, you should also add the corresponding label to indicate whether the changes are a MAJOR, MINOR or PATCH version. This will then be used to automatically create the appropriate tags when the pull request is merged.
 
-After merging changes into main, you can create a new set of tags by using the [Create Tags](https://github.com/amdigital-co-uk/workflows/actions/workflows/tag.yml) workflow. For instance when tagging using `v1.0.0`, the workflow will create individual tags called `v1`, `v1.0` and `v1.0.0`. Then, when subsequently tagging using `v1.0.1`, the `v1` and `v1.0` tags will get updated to the latest commit, and the new `v1.0.1` tag will get created.
+Assume for instance that the current version is `v1.0.0`. This means there will be a `v1` tag, a `v1.0` tag and a `v1.0.0` tag. Creating a pull request to merge changes that are a MINOR version bump, you should label the pull request as **minor**. Finally, when the pull request is merged, the following tags will be created/updated:
 
-This allows calling workflows to reference a MAJOR, MINOR or PATCH version of a workflow file, depending on how specific an iteration of it is required. For instance, one workflow could use `v1`, which will automatically import any MINOR or PATCH updates, whilst another workflow could use `v1.0.1` if a specific behaviour is desired.
+- `v1` will get updated to point to the latest commit on `main`
+- `v1.1` will get created to point to the latest commit on `main`
+- `v1.1.0` will get created to point to the latest commit on `main`
+
+This allows *calling* workflows from other repositories to reference a MAJOR, MINOR or PATCH version of a workflow file, depending on how specific an iteration of it is needed, or how tolerant of changes the calling workflow is. For instance, one workflow could use `reusable.yml@v1`, which will automatically import any MINOR or PATCH updates, whilst another workflow could use `reusable.yml@v1.0.1` if a specific behaviour is desired.
