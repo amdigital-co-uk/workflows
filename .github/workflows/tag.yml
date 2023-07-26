@@ -26,7 +26,7 @@ jobs:
           PATCH: ${{ contains(github.event.pull_request.labels.*.name, 'patch') }}
         run: |
           # Get the latest tag and remove the leading 'v'
-          version=$(git describe --tags --abbrev=0 | cut -dv -f2-)
+          version=$(git tag --list v*.*.* | sort | tail -n1 | cut -dv -f2-)
 
           # Set the version output
           echo "::set-output name=version::$version"
