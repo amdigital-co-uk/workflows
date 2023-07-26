@@ -51,9 +51,9 @@ jobs:
               echo "bump=none" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install semver commandline
+      - name: Install semver CLI tool
         run: |
-          curl -L https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver -o semver
+          curl -L https://raw.githubusercontent.com/fsaintjacques/semver-tool/3.4.0/src/semver -o semver
           chmod +x semver
 
       - name: Add version tags
