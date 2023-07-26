@@ -57,12 +57,11 @@ jobs:
       - name: Add version tags
         if: ${{ steps.detect-labels.outputs.bump != 'none' }}
         run: |
-
+          # Set tags based on outputs from detect-labels
           TAGS=v$(./semver bump ${{ steps.detect-labels.outputs.bump }} ${{ steps.detect-labels.outputs.version }})
 
           for t in $(echo $TAGS | tr '.' '\n')
           do
-
               if [ -z "$tag" ]
               then
                   tag=$t
