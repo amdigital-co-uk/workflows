@@ -31,29 +31,29 @@ jobs:
           version=$(git tag --list v*.*.* | sort | tail -n1 | cut -dv -f2-)
 
           # Set the version output
-          echo "::set-output name=version::$version"
+          echo "version=version" >> "$GITHUB_OUTPUT"
 
           # Set the bump output based on the label
           if [ "$MAJOR" = "true" ]
           then
               echo "version=$version, bump=major"
-              echo "::set-output name=bump::major"
+              echo "bump=major" >> "$GITHUB_OUTPUT"
           elif [ "$MINOR" = "true" ]
           then
               echo "version=$version, bump=minor"
-              echo "::set-output name=bump::minor"
+              echo "bump=minor" >> "$GITHUB_OUTPUT"
           elif [ "$PATCH" = "true" ]
           then
               echo "version=$version, bump=patch"
-              echo "::set-output name=bump::patch"
+              echo "bump=patch" >> "$GITHUB_OUTPUT"
           else
               echo "version=$version, bump=none"
-              echo "::set-output name=bump::none"
+              echo "bump=none" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install semver commandline
+      - name: Install semver CLI tool
         run: |
-          curl -L https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver -o semver
+          curl -L https://raw.githubusercontent.com/fsaintjacques/semver-tool/3.4.0/src/semver -o semver
           chmod +x semver
 
       - name: Add version tags
