@@ -97,7 +97,7 @@ jobs:
           echo "Execution Results = $(cat results.txt | grep "Execution ID" | head -n1)"
           echo "Execution ID = ${executionId}"
           kubectl testkube get tse ${executionId} -o json > results.json
-          cat results.json
+          ls -l *.json
           result=$(jq .status results.json | jq -r)
           echo "result=${result}"
           echo "result=${result}" >> $GITHUB_OUTPUT
