@@ -29,9 +29,10 @@ jobs:
         run: |
           # Get the latest tag and remove the leading 'v'
           version=$(git tag --list v*.*.* | sort | tail -n1 | cut -dv -f2-)
+          echo version=$version
 
           # Set the version output
-          echo "version=version" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
           # Set the bump output based on the label
           if [ "$MAJOR" = "true" ]
