@@ -99,6 +99,7 @@ jobs:
           kubectl testkube get tse ${executionId} -o json > results.json
           ls -l *.json
           result=$(jq .status results.json | jq -r)
+          echo "result=${result}"
           echo "result=${result}" >> $GITHUB_OUTPUT
 
       - name: Appraise and report result
