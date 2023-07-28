@@ -85,7 +85,7 @@ jobs:
 
       - name: Apply manifests
         working-directory: testkube/manifests
-        run: kubectl apply -f . -n ${{ inputs.namespace }}
+        run: kubectl apply -f .
 
       - name: Run Test Suite
         run: kubectl testkube run testsuite ${{ inputs.test-suite }} -n testkube -v NAMESPACE=${{ inputs.namespace }} --watch | tee results.txt
