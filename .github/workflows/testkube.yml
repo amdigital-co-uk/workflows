@@ -11,9 +11,6 @@ on:
         description: "Name of Testsuite to run"
         required: true
         type: string
-      microservice:
-        description: "Name of the GitHub repository to update and run Testkube for"
-        required: true
       namespace:
         description: "Namespace of request objects to include"
         required: true
@@ -35,9 +32,6 @@ on:
   workflow_call:
     inputs:
       test-suite:        # Name of Testsuite to run
-        required: true
-        type: string
-      microservice:     # Name of the GitHub repository to update and run Testkube for
         required: true
         type: string
       namespace:        # Namespace of request objects to include
