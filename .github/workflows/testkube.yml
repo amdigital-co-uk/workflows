@@ -1,0 +1,111 @@
+# CI workflow for running testkube test suites 
+name: Run Testkube test suite for MS
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      test-suite:
+        description: "Name of Testsuite to run"
+        required: true
+        type: string
+      namespace:
+        description: "Namespace of request objects to include"
+        required: true
+      cluster:
+        description: "Cluster name to run testkube under"
+        type: choice
+        options:
+        - quartex-production
+        - quartex-dev-01
+        - quartex-development
+      aws-region:
+        description: "Set Region to find the cluster in"
+        type: choice
+        options:
+        - us-east-1
+      aws-role-arn:
+        type: string
+
+  workflow_call:
+    inputs:
+      test-suite:        # Name of Testsuite to run
+        required: true
+        type: string
+      namespace:        # Namespace of request objects to include
+        required: true
+        type: string
+      cluster:     # Cluster name to run testkube under
+        type: string
+        default: quartex-production
+      aws-region:           # Set Region to find the cluster in
+        type: string
+        default: us-east-1
+      aws-role-arn:
+        type: string
+    outputs:
+      result:
+        value: ${{ jobs.testkube.outputs.result }}
+    
+
+jobs:
+  testkube:
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.results.outputs.result }}
+    steps:
+      # Checks-out repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials ${{ inputs.aws-region }}
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ inputs.aws-role-arn }}
+          role-duration-seconds: 900
+          aws-region: ${{ inputs.aws-region }}
+
+      # Install kubectl and testkube clis
+      - name: Install dependancies
+        run: |
+          curl -LO https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.17/2023-05-11/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          mv ./kubectl /usr/local/bin/kubectl
+
+          curl -LO https://github.com/kubeshop/testkube/releases/download/v1.13.3/testkube_1.13.3_Linux_x86_64.tar.gz
+          ls -l testkube_1.13.3_Linux_x86_64.tar.gz
+          gunzip testkube_1.13.3_Linux_x86_64.tar.gz
+          tar -xvf testkube_1.13.3_Linux_x86_64.tar
+          mv  kubectl-testkube /usr/local/bin/kubectl-testkube
+
+      - name: Configure EKS Cluster access
+        run: aws eks update-kubeconfig --name ${{ inputs.cluster }} --region ${{ inputs.aws-region }}     
+
+      - name: Apply manifests
+        working-directory: testkube/manifests
+        run: kubectl apply -f .
+
+      - name: Run Test Suite
+        run: kubectl testkube run testsuite ${{ inputs.test-suite }} -n testkube -v NAMESPACE=${{ inputs.namespace }} --watch | tee results.txt
+
+      - name: Get test status
+        id: results
+        run: | 
+          executionId=$(cat results.txt | grep "Execution ID" | head -n1 | awk '{print $4}' | sed -e 's/\x1b\[[0-9;]*m//g')
+          echo "Execution Results = $(cat results.txt | grep "Execution ID" | head -n1)"
+          echo "Execution ID = ${executionId}"
+          kubectl testkube get tse ${executionId} -o json > results.json
+          ls -l *.json
+          result=$(jq .status results.json | jq -r)
+          echo "result=${result}"
+          echo "result=${result}" >> $GITHUB_OUTPUT
+
+      - name: Appraise and report result
+        if: ${{steps.results.output.result == 'passed'}}
+        run: echo "Tests Result = ${steps.results.output.result}"
+
+      - name: Appraise and report result
+        if: ${{steps.results.output.result == 'failed'}}
+        run: echo "Tests Result = ${steps.results.output.result}" && exit 1
