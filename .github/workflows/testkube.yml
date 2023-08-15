@@ -104,10 +104,10 @@ jobs:
 
       - name: Appraise and report result
         if: ${{steps.results.outputs.result == 'passed'}}
-        run: echo "Tests Result = ${steps.results.outputs.result}"
+        run: echo "Tests Result = ${{steps.results.outputs.result}}"
 
       - name: Appraise and report result
         if: ${{steps.results.outputs.result == 'failed'}}
-        run: echo "Tests Result = ${steps.results.outputs.result}" && exit 1
+        run: echo "Tests Result = ${{steps.results.outputs.result}}" && exit 1
 
         
