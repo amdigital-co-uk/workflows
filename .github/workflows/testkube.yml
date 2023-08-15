@@ -103,9 +103,9 @@ jobs:
           echo "result=${result}" >> $GITHUB_OUTPUT
 
       - name: Appraise and report result
-        if: ${{steps.results.output.result == 'passed'}}
+        if: ${{steps.results.outputs.result == 'passed'}}
         run: echo "Tests Result = ${steps.results.outputs.result}"
 
       - name: Appraise and report result
-        if: ${{steps.results.output.result == 'failed'}}
+        if: ${{steps.results.outputs.result == 'failed'}}
         run: echo "Tests Result = ${steps.results.outputs.result}" && exit 1
