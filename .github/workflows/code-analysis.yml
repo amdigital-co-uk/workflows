@@ -6,11 +6,11 @@ permissions:
 on:
   workflow_call:
     inputs:
-      dotnet_version:
+      dotnet-version:
         required: false
         type: string
         default: null
-      docker_compose:  
+      docker-compose:  
         type: string
       organization:  
         type: string
@@ -56,14 +56,14 @@ jobs:
     - name: Login to GitHub packages
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: ${{ inputs.dotnet_version }}
+        dotnet-version: ${{ inputs.dotnet-version }}
         source-url: https://nuget.pkg.github.com/amdigital-co-uk/index.json
       env:
         NUGET_AUTH_TOKEN: ${{secrets.PKG_TOKEN}}
 
     - name: Start containers
-      if: ${{ inputs.docker_compose != '' }}
-      run: docker compose -f ${{ inputs.docker_compose }} up -d
+      if: ${{ inputs.docker-compose != '' }}
+      run: docker compose -f ${{ inputs.docker-compose }} up -d
 
     - name: Build and analyze
       run: |
