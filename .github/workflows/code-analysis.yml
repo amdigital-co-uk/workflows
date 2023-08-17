@@ -32,7 +32,7 @@ jobs:
       uses: actions/setup-java@v3
       with:
         java-version: 17
-        distribution: 'zulu' # Alternative distribution options are available.
+        distribution: 'zulu' 
     
     - uses: actions/checkout@v3
       with:
@@ -72,4 +72,4 @@ jobs:
           dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
