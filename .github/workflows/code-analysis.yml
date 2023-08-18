@@ -60,6 +60,66 @@ jobs:
         source-url: https://nuget.pkg.github.com/amdigital-co-uk/index.json
       env:
         NUGET_AUTH_TOKEN: ${{secrets.PKG_TOKEN}}
+        
+    - name: Report Package Vulnerabilities
+      run: dotnet list package --vulnerable --include-transitive --format json > packageErrors.json
+
+    - name: Format Package Vulnerabilities report
+      run: |
+        import json
+        import os
+        
+        severity = {
+            "Critical" : "CRITICAL",
+            "High": "MAJOR",
+            "Moderate": "MINOR",
+            "Low": "INFO"
+        }
+        
+        f = open('packageErrors.json')
+        
+        data = json.load(f)
+        
+        issues = [];
+        
+        for projects in data['projects']:
+            path = os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-2:])
+        
+            for framework in projects['frameworks']:
+                packages = []
+                
+                if "topLevelPackages" in framework:
+                    packages = packages + framework['topLevelPackages']
+        
+                if "transitivePackages" in framework:
+                    packages = packages + framework['transitivePackages']  
+        
+                for package in packages:
+                    for vulnerability in package['vulnerabilities']:
+                        issue = {
+                            "engineId": "Dotnet Package",
+                            "ruleId": "vulnerable-package",
+                            "severity": severity[vulnerability["severity"]],
+                            "type": "VULNERABILITY",
+                            "primaryLocation": {
+                                "message":  vulnerability["advisoryurl"],
+                                "filePath": path
+                            }
+                        }
+                        issues.append(issue);
+        
+        dictionary = {
+            "issues": issues,
+        }
+        
+        json_object = json.dumps(dictionary, indent=4)
+        
+        # Writing to sample.json
+        with open("dotnet-packages-report.json", "w") as outfile:
+            outfile.write(json_object)
+
+      shell: python
+        
 
     - name: Start containers
       if: ${{ inputs.docker-compose != '' }}
@@ -67,7 +127,7 @@ jobs:
 
     - name: Build and analyze
       run: |
-          dotnet-sonarscanner begin /k:"${{ inputs.organization }}_${{ inputs.project }}" /o:"${{ inputs.organization }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"  /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+          dotnet-sonarscanner begin /k:"${{ inputs.organization }}_${{ inputs.project }}" /o:"${{ inputs.organization }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"  /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml /d:sonar.externalIssuesReportPaths="dotnet-packages-report.json"
           dotnet build --no-incremental
           dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
