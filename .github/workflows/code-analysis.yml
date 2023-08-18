@@ -62,11 +62,15 @@ jobs:
         NUGET_AUTH_TOKEN: ${{secrets.PKG_TOKEN}}
         
     - name: Report Package Vulnerabilities run to see what happened
-      run: dotnet list package --vulnerable --include-transitive --format json 
+      run: |
+        dotnet build
+        dotnet list package --vulnerable --include-transitive --format json 
       continue-on-error: true
 
     - name: Report Package Vulnerabilities
-      run: dotnet list package --vulnerable --include-transitive --format json > packageErrors.json
+      run: |
+        dotnet build
+        dotnet list package --vulnerable --include-transitive --format json > packageErrors.json
       continue-on-error: true
 
     - name: Format Package Vulnerabilities report
