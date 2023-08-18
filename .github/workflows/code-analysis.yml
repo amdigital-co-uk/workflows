@@ -87,6 +87,7 @@ jobs:
         
         for projects in data['projects']:
             path = os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-2:])
+            projectName = os.path.splitext(os.path.basename(os.path.normpath(projects["path"])))[0]
         
             for framework in projects['frameworks']:
                 packages = []
@@ -106,7 +107,7 @@ jobs:
                             "type": "VULNERABILITY",
                             "primaryLocation": {
                                 "message":  vulnerability["advisoryurl"],
-                                "filePath": path
+                                "filePath": projectName
                             }
                         }
                         issues.append(issue);
@@ -135,7 +136,7 @@ jobs:
 
     - name: Build and analyze
       run: |
-          dotnet-sonarscanner begin /k:"${{ inputs.organization }}_${{ inputs.project }}" /o:"${{ inputs.organization }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"  /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml /d:sonar.externalIssuesReportPaths="${{ runner.temp }}/dotnet-packages-report.json" /d:sonar.verbose=true
+          dotnet-sonarscanner begin /k:"${{ inputs.organization }}_${{ inputs.project }}" /o:"${{ inputs.organization }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"  /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml /d:sonar.externalIssuesReportPaths="${{ runner.temp }}/dotnet-packages-report.json"
           dotnet build --no-incremental
           dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
