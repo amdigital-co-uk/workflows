@@ -70,8 +70,9 @@ jobs:
     - name: Report Package Vulnerabilities
       run: |
         dotnet build
-        dotnet list package --vulnerable --include-transitive --format json > packageErrors.json
+        dotnet list package --vulnerable --include-transitive --format json > ~\temp\packageErrors.json
       continue-on-error: true
+      # github action path is /home/runner/work/_temp/_github_home
 
     - name: Format Package Vulnerabilities report
       run: |
@@ -124,7 +125,7 @@ jobs:
         json_object = json.dumps(dictionary, indent=4)
         
         # Writing to sample.json
-        with open("dotnet-packages-report.json", "w") as outfile:
+        with open(os.path.join(os.getenv("RUNNER_TEMP"), "dotnet-packages-report.json"), "w") as outfile:
             outfile.write(json_object)
 
       shell: python
@@ -136,7 +137,7 @@ jobs:
 
     - name: Build and analyze
       run: |
-          dotnet-sonarscanner begin /k:"${{ inputs.organization }}_${{ inputs.project }}" /o:"${{ inputs.organization }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"  /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml /d:sonar.externalIssuesReportPaths="dotnet-packages-report.json"
+          dotnet-sonarscanner begin /k:"${{ inputs.organization }}_${{ inputs.project }}" /o:"${{ inputs.organization }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"  /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml /d:sonar.externalIssuesReportPaths="${{ runner.temp }}/dotnet-packages-report.json"
           dotnet build --no-incremental
           dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
