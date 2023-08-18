@@ -125,7 +125,12 @@ jobs:
         json_object = json.dumps(dictionary, indent=4)
         
         # Writing to sample.json
-        with open(os.path.join(os.getenv("RUNNER_TEMP"), "dotnet-packages-report.json"), "w") as outfile:
+
+        foldername = os.path.join(os.getenv("RUNNER_TEMP"), "dotnet-packages-report.json")
+
+        print("Report complete saving to "+ foldername)
+        
+        with open(foldername, "w") as outfile:
             outfile.write(json_object)
 
       shell: python
