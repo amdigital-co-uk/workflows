@@ -87,6 +87,7 @@ jobs:
         
         for projects in data['projects']:
             path = os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-2:])
+            path2 = os.path.splitext(os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-2:]))[0]
             projectName = os.path.splitext(os.path.basename(os.path.normpath(projects["path"])))[0]
         
             for framework in projects['frameworks']:
@@ -107,7 +108,7 @@ jobs:
                             "type": "VULNERABILITY",
                             "primaryLocation": {
                                 "message":  vulnerability["advisoryurl"],
-                                "filePath": projectName
+                                "filePath": path2
                             }
                         }
                         issues.append(issue);
