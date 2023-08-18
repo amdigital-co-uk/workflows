@@ -1,0 +1,46 @@
+# Run unit tests
+name: Run Dotnet Tests
+permissions:
+  id-token: write
+  contents: read
+
+# Define Parameters
+on:
+  workflow_call:
+    inputs:
+      docker-compose:   # Path to docker-compose.yml file: If populated, spins up containers required for integration tests
+        type: string
+      dotnet-version:
+        required: false
+        type: string
+        default: null
+    secrets:
+      PKG_TOKEN:
+        required: true
+
+jobs:
+  dotnet-test:
+    name: Run Dotnet Tests
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Spins up services via Docker-compose
+      - name: Start containers
+        if: ${{ inputs.docker-compose != '' }}
+        run: docker compose -f ${{ inputs.docker-compose }} up -d
+      
+      # Login to GitHub packages
+      - name: Login to GitHub packages
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+          source-url: https://nuget.pkg.github.com/amdigital-co-uk/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.PKG_TOKEN}}
+    
+      # Run Unit Tests
+      - name: Run Unit Tests
+        run: dotnet test 
