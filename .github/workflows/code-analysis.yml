@@ -87,7 +87,7 @@ jobs:
         uniqueFolders = set()
         
         for projects in data['projects']:
-            path = os.path.splitext(os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-3:]))[0] + ".json"
+            path = os.path.splitext(os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-2:]))[0] + ".json"
             uniqueFolders.add(path)
         
             for framework in projects['frameworks']:
@@ -120,7 +120,7 @@ jobs:
         # Create files to attached issues too
         for filePath in uniqueFolders:
             # Remove top folder from folder path
-            filePath = os.path.join(*(filePath.split(os.path.sep)[1:]))
+            # filePath = os.path.join(*(filePath.split(os.path.sep)[1:]))
                 
             # Add current directory to file path
             filePath = os.path.join(os.getcwd(), filePath)
