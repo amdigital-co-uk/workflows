@@ -83,53 +83,52 @@ jobs:
         
         data = json.load(f)
         
-        issues = [];
+        issues = []
         uniqueFolders = set()
         
         for projects in data['projects']:
-          path = os.path.splitext(os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-3:]))[0] + ".json"
-          uniqueFolders.add(path)
+            path = os.path.splitext(os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-3:]))[0] + ".json"
+            uniqueFolders.add(path)
         
             for framework in projects['frameworks']:
-              packages = []
-              
-              if "topLevelPackages" in framework:
-                  packages = packages + framework['topLevelPackages']
-      
-              if "transitivePackages" in framework:
-                  packages = packages + framework['transitivePackages']  
-      
-              for package in packages:
-                  for vulnerability in package['vulnerabilities']:
-                      issue = {
-                          "engineId": "Dotnet Package",
-                          "ruleId": "vulnerable-package",
-                          "severity": severity[vulnerability["severity"]],
-                          "type": "VULNERABILITY",
-                          "primaryLocation": {
-                              "message":  vulnerability["advisoryurl"],
-                              "filePath": path
-                          }
-                      }
-                      issues.append(issue);
+                packages = []
+                
+                if "topLevelPackages" in framework:
+                    packages = packages + framework['topLevelPackages']
+        
+                if "transitivePackages" in framework:
+                    packages = packages + framework['transitivePackages']  
+        
+                for package in packages:
+                    for vulnerability in package['vulnerabilities']:
+                        issue = {
+                            "engineId": "Dotnet Package",
+                            "ruleId": "vulnerable-package",
+                            "severity": severity[vulnerability["severity"]],
+                            "type": "VULNERABILITY",
+                            "primaryLocation": {
+                                "message":  vulnerability["advisoryurl"],
+                                "filePath": path
+                            }
+                        }
+                        issues.append(issue);
         
         dictionary = {
             "issues": issues,
         }
-
+        
+        # Create files to attached issues too
         for filePath in uniqueFolders:
-
-          # Remove top folder from folder path
-          filePath = os.path.join(*(filePath.split(os.path.sep)[1:]))
-             
-          # Add current directory to file path
-          filePath = os.path.join(os.getcwd(), filePath)
-      
-          if not os.path.exists(filePath):
-              open(filePath, 'a').close()
+            # Remove top folder from folder path
+            filePath = os.path.join(*(filePath.split(os.path.sep)[1:]))
+                
+            # Add current directory to file path
+            filePath = os.path.join(os.getcwd(), filePath)
+        
+            if not os.path.exists(filePath):
+                open(filePath, 'a').close()
         
         json_object = json.dumps(dictionary, indent=4)
-        
         foldername = os.path.join(os.getenv("RUNNER_TEMP"), "dotnet-packages-report.json")
 
         print("Report complete saving to "+ foldername)
