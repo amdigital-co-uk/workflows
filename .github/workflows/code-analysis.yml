@@ -84,12 +84,11 @@ jobs:
         data = json.load(f)
         
         issues = [];
+        uniqueFolders = set()
         
         for projects in data['projects']:
-            path = os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-2:])
-            path2 = os.path.splitext(os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-2:]))[0]
-            path3 = os.path.splitext(os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-3:-1]))[0]
-            projectName = os.path.splitext(os.path.basename(os.path.normpath(projects["path"])))[0]
+          path = os.path.splitext(os.sep.join(os.path.normpath(projects["path"]).split(os.sep)[-3:]))[0] + ".json"
+          uniqueFolders.add(path)
         
             for framework in projects['frameworks']:
                 packages = []
@@ -109,7 +108,7 @@ jobs:
                             "type": "VULNERABILITY",
                             "primaryLocation": {
                                 "message":  vulnerability["advisoryurl"],
-                                "filePath": path3
+                                "filePath": path
                             }
                         }
                         issues.append(issue);
@@ -117,11 +116,20 @@ jobs:
         dictionary = {
             "issues": issues,
         }
+
+        for filePath in uniqueFolders:
+
+          # Remove top folder from folder path
+          filePath = os.path.join(*(filePath.split(os.path.sep)[1:]))
+             
+          # Add current directory to file path
+          filePath = os.path.join(os.getcwd(), filePath)
+      
+          if not os.path.exists(filePath):
+              open(filePath, 'a').close()
         
         json_object = json.dumps(dictionary, indent=4)
         
-        # Writing to sample.json
-
         foldername = os.path.join(os.getenv("RUNNER_TEMP"), "dotnet-packages-report.json")
 
         print("Report complete saving to "+ foldername)
