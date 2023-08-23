@@ -1,0 +1,78 @@
+name: Update Image Tags
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      docker-image:
+        type: string
+        required: true
+      image-tag:
+        type: string
+        required: true
+      role-arn:
+        type: string
+        required: true
+      region-primary:
+        type: string
+        default: us-east-1
+      region-secondary:
+          type: string
+          default: us-east-2
+
+jobs:
+    
+    update-image-tags:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Configure AWS credentials ${{ inputs.region-primary }}
+          uses: aws-actions/configure-aws-credentials@v2
+          with:
+            role-to-assume: ${{ inputs.role-arn }}
+            role-duration-seconds: 900
+            aws-region: ${{ inputs.region-primary }}
+        - name: Login to Amazon ECR ${{ inputs.region-primary }}
+          id: login-ecr-1
+          uses: aws-actions/amazon-ecr-login@v1
+
+        - name: Configure AWS credentials ${{ inputs.region-secondary }}
+          uses: aws-actions/configure-aws-credentials@v2
+          with:
+            role-to-assume: ${{ inputs.role-arn }}
+            role-duration-seconds: 900
+            aws-region: ${{ inputs.region-secondary }}
+        - name: Login to Amazon ECR ${{ inputs.region-secondary }}
+          id: login-ecr-2
+          uses: aws-actions/amazon-ecr-login@v1
+
+        - name: Remove previous deployed tag 
+          run: |
+            aws ecr batch-delete-image --repository-name ${{ inputs.docker-image }} --image-ids imageTag=previously-deployed --region us-east-1
+            aws ecr batch-delete-image --repository-name ${{ inputs.docker-image }} --image-ids imageTag=previously-deployed --region us-east-2
+
+        - name: Get Previous Deployed Image Manifest 
+          run: aws ecr batch-get-image --repository-name ${{ inputs.docker-image }} --image-ids imageTag=deployed --region us-east-1 --output json --query images[].imageManifest | jq .[0] --raw-output > prev_manifest.json  
+       
+        - name: Get Current Deployed Image Manifest 
+          run: aws ecr batch-get-image --repository-name ${{ inputs.docker-image }} --image-ids imageTag=${{ inputs.image-tag }} --region us-east-1 --output json --query images[].imageManifest | jq .[0] --raw-output > cur_manifest.json
+
+        - name: Delete Deployed Tag 
+          run: |
+            aws ecr batch-delete-image --repository-name ${{ inputs.docker-image }} --image-ids imageTag=deployed --region us-east-1
+            aws ecr batch-delete-image --repository-name ${{ inputs.docker-image }} --image-ids imageTag=deployed --region us-east-2      
+
+        - name: Update Tags 
+          run: |            
+              aws ecr put-image --repository-name ${{ inputs.docker-image }} --image-tag deployed --image-manifest "$(cat cur_manifest.json)" --region us-east-1
+              aws ecr put-image --repository-name ${{ inputs.docker-image }} --image-tag deployed --image-manifest "$(cat cur_manifest.json)" --region us-east-2
+
+        - name: Update Tags 
+          run: |   
+            if [[ $(cat prev_manifest.json) != '[]' ]]  
+            then     
+              aws ecr put-image --repository-name ${{ inputs.docker-image }} --image-tag previously-deployed --image-manifest "$(cat prev_manifest.json)" --region us-east-1
+              aws ecr put-image --repository-name ${{ inputs.docker-image }} --image-tag previously-deployed --image-manifest "$(cat prev_manifest.json)" --region us-east-2 
+            fi

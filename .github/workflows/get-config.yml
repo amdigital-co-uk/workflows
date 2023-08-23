@@ -1,0 +1,61 @@
+name: Get Configuration
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        description: "Environment to deploy to"
+        type: string
+        default: Live
+    outputs:
+      cluster:
+        value: ${{ jobs.get-config.outputs.cluster }}
+      clusterSuffix:
+        value: ${{ jobs.get-config.outputs.clusterSuffix }}
+      globalSuffix:
+        value: ${{ jobs.get-config.outputs.globalSuffix }}
+      esUrl: 
+        value: ${{ jobs.get-config.outputs.esUrl }}
+      namespace:
+        value: ${{ jobs.get-config.outputs.namespace }}
+
+jobs:
+  get-config:
+    runs-on: ubuntu-latest
+    outputs:
+        cluster: ${{ steps.get-config.outputs.cluster }}
+        clusterSuffix: ${{ steps.get-config.outputs.cluster-suffix }}
+        globalSuffix: ${{ steps.get-config.outputs.global-suffix }}
+        esUrl: ${{ steps.get-config.outputs.es-url }}
+        namespace: ${{ steps.get-config.outputs.namespace }}
+    steps:
+      - name: Set Config Outputs
+        id: get-config 
+        run: |
+          env=${{ inputs.env }}
+          envLower=$(echo $env | tr '[:upper:]' '[:lower:]')
+          cluster="quartex-production"
+          clusterSuffix="-live.live.svc.cluster.local"
+          globalSuffix=".quartexcollectins.com"
+          esUrl="http://elasticsearch-internal.quartex.uk"
+
+          if [[ $envLower == qa* ]] 
+          then
+            cluster="quartex-development"
+            clusterSuffix=""
+            globalSuffix=".${envLower}.quartex.uk"
+          fi
+
+          if [[ $envLower == dev* ]] 
+          then
+            cluster="quartex-dev-01"
+            clusterSuffix=""
+            globalSuffix=".${envLower}.quartex.uk"
+            esUrl="http://elasticsearch.${envLower}:9200"
+          fi
+
+          echo "cluster=$cluster" >> $GITHUB_OUTPUT
+          echo "cluster-suffix=$clusterSuffix" >> $GITHUB_OUTPUT
+          echo "global-suffix=$globalSuffix" >> $GITHUB_OUTPUT
+          echo "es-url=$esUrl" >> $GITHUB_OUTPUT
+          echo "namespace=$envLower" >> $GITHUB_OUTPUT

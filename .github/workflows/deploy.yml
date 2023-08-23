@@ -1,0 +1,73 @@
+name: Deploy Service
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      image-tag:
+        description: 'Image Tag'
+        type: string
+      environment:
+        description: 'Environment to deploy to'
+        type: string
+        default: Live
+      role-arn:
+        type: string
+        required: true
+      region:
+        type: string
+        default: us-east-1
+      cluster:
+        type: string
+      cluster-suffix:
+        type: string
+      global-suffix:
+        type: string
+      elastic-search-url:
+        type: string
+      namespace:
+        type: string
+jobs:
+  deploy:
+    name: Helm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Configure AWS credentials ${{ inputs.region }}
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ inputs.role-arn }}
+          role-duration-seconds: 900
+          aws-region: ${{ inputs.region }}
+
+      - name: Install CLI tools
+        run: |
+          curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.17/2023-05-11/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          mv ./kubectl /usr/local/bin/kubectl
+
+          curl -LO https://get.helm.sh/helm-v3.12.2-linux-amd64.tar.gz
+          tar -zxvf helm-v3.12.2-linux-amd64.tar.gz
+          mv linux-amd64/helm /usr/local/bin/helm
+
+      - name: Configure EKS Cluster access
+        run: aws eks update-kubeconfig --name ${{ inputs.cluster }} --region us-east-1 --alias dev
+
+      - name: Replace values
+        run: |
+          sed -i helm/values.yaml -e "s|<imageTag>|${{ inputs.image-tag }}|g"
+          sed -i helm/values.yaml -e "s|<envUpper>|${{ inputs.environment }}|g"
+          sed -i helm/values.yaml -e "s|<envClusterSuffix>|${{ inputs.cluster-suffix }}|g"
+          sed -i helm/values.yaml -e "s|<envGlobalSuffix>|${{ inputs.global-suffix }}|g"
+          sed -i helm/values.yaml -e "s|<esUrl>|${{ inputs.elastic-search-url }}|g"
+          cat helm/values.yaml
+
+      - name: Deploy helm release
+        run: |
+          helm upgrade assets-queue-service helm/chart -n ${{ inputs.namespace }} --atomic --install -f helm/values.yaml

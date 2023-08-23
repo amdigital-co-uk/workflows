@@ -1,0 +1,64 @@
+# Promote or rollback a blue/green deployment
+
+name: Promote or rollback deployment
+permissions:
+  id-token: write
+  contents: read
+  
+on:
+  workflow_call:
+    inputs:
+      role-arn:
+        type: string
+        required: true
+      region:
+        type: string
+        default: us-east-1
+      namespace:
+        type: string
+        description: "Target environment (e.g. live, qa, dev-1 etc)"
+        default: live
+      cluster:
+        type: string
+        description: "Cluster that the app is deployed to"
+        default: quartex-production
+      microservice:
+        type: string
+        description: "Name of the application we are deploying"
+        required: true
+      promote:
+        type: boolean
+        description: "Flag that determines if we're promoting or rolling back, true = promote, false = rollback"
+        default: false
+
+jobs:
+  promote_or_rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ inputs.role-arn }}
+          role-duration-seconds: 900
+          aws-region: ${{ inputs.region }}
+
+      - name: Install CLI tools
+        run: |
+          curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.17/2023-05-11/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          mv ./kubectl /usr/local/bin/kubectl
+
+          curl -LO https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-linux-amd64
+          chmod +x ./kubectl-argo-rollouts-linux-amd64
+          mv ./kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
+
+      - name: Configure EKS Cluster access
+        run: aws eks update-kubeconfig --name ${{ inputs.cluster }} --region ${{ inputs.region }}
+
+      - name: Promote the service
+        if: ${{ inputs.PROMOTE == true }}
+        run: kubectl argo rollouts promote ${{ inputs.microservice }} -n ${{ inputs.namespace }}
+
+      - name: Rollback the service
+        if: ${{ inputs.PROMOTE == false }}
+        run: kubectl argo rollouts abort ${{ inputs.microservice }} -n ${{ inputs.namespace }}
