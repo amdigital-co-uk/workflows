@@ -91,27 +91,27 @@ jobs:
           uniqueFolders.add(path)
         
             for framework in projects['frameworks']:
-                packages = []
-                
-                if "topLevelPackages" in framework:
-                    packages = packages + framework['topLevelPackages']
-        
-                if "transitivePackages" in framework:
-                    packages = packages + framework['transitivePackages']  
-        
-                for package in packages:
-                    for vulnerability in package['vulnerabilities']:
-                        issue = {
-                            "engineId": "Dotnet Package",
-                            "ruleId": "vulnerable-package",
-                            "severity": severity[vulnerability["severity"]],
-                            "type": "VULNERABILITY",
-                            "primaryLocation": {
-                                "message":  vulnerability["advisoryurl"],
-                                "filePath": path
-                            }
-                        }
-                        issues.append(issue);
+              packages = []
+              
+              if "topLevelPackages" in framework:
+                  packages = packages + framework['topLevelPackages']
+      
+              if "transitivePackages" in framework:
+                  packages = packages + framework['transitivePackages']  
+      
+              for package in packages:
+                  for vulnerability in package['vulnerabilities']:
+                      issue = {
+                          "engineId": "Dotnet Package",
+                          "ruleId": "vulnerable-package",
+                          "severity": severity[vulnerability["severity"]],
+                          "type": "VULNERABILITY",
+                          "primaryLocation": {
+                              "message":  vulnerability["advisoryurl"],
+                              "filePath": path
+                          }
+                      }
+                      issues.append(issue);
         
         dictionary = {
             "issues": issues,
