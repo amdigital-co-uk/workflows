@@ -29,6 +29,9 @@ on:
         type: string
       namespace:
         type: string
+      service-name:
+        type: string
+        required: true
 jobs:
   deploy:
     name: Helm
@@ -70,4 +73,10 @@ jobs:
 
       - name: Deploy helm release
         run: |
-          helm upgrade assets-queue-service helm/chart -n ${{ inputs.namespace }} --atomic --install -f helm/values.yaml
+          LIST="qa stage uat live"
+          if [[ $LIST =~ (^|[[:space:]])${{ inputs.namespace }}($|[[:space:]]) ]]
+          then
+            helm upgrade ${{ inputs.service-name }}-${{ inputs.namespace }} helm/chart -n ${{ inputs.namespace }} --atomic --install -f helm/values.yaml
+          else
+            helm upgrade ${{ inputs.service-name }} helm/chart -n ${{ inputs.namespace }} --atomic --install -f helm/values.yaml
+          fi
