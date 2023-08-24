@@ -1,0 +1,127 @@
+# Build and package .NET Core application with Docker
+name: DB Migration Pipeline
+permissions:
+  id-token: write
+  contents: read
+
+# Define triggers for when the workflow will run
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+      namespace:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+      service-manager-url:
+        type: string
+        required: true
+      cluster:
+        type: string
+        required: true
+      role-arn:
+        type: string
+        required: true
+      region:
+        type: string
+        default: us-east-1
+      pod:
+        type: string
+    secrets:
+      PKG_TOKEN:
+        required: true
+    outputs:
+      current-migration:
+        value: ${{ jobs.apply.outputs.current-migration }}
+      migrations-to-apply:
+        value: ${{ jobs.apply.outputs.migrations-to-apply }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    name: Apply migration
+    outputs:
+      current-migration: ${{ steps.run-migration.outputs.current-migration }}
+      migrations-to-apply: ${{ steps.run-migration.outputs.migrations-to-apply }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Login to ECR_REGION_1
+      # See https://github.com/marketplace/actions/amazon-ecr-login-action-for-github-actions
+      - name: Configure AWS credentials ${{ inputs.region }}
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ inputs.role-arn }}
+          role-duration-seconds: 900
+          aws-region: ${{ inputs.region }}
+      - name: Login to Amazon ECR ${{ inputs.region }}
+        id: login-ecr-1
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Install CLI tools
+        run: |
+          curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.22.17/2023-05-11/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          mv ./kubectl /usr/local/bin/kubectl
+
+      - name: Configure EKS Cluster access
+        run: aws eks update-kubeconfig --name ${{ inputs.cluster }} --region ${{ inputs.region }}
+
+      - name: Create manifest
+        run: |
+          unique=$(date +%s)
+          cp DBMigrator.yml manifest.yml
+          sed -i manifest.yml -e "s/DK_TAG/${{ inputs.version }}/g"
+          sed -i manifest.yml -e "s/UNIQUE_ID/$unique/g"
+          sed -i manifest.yml -e "s/NAMESPACE/${{ inputs.namespace }}/g"
+          sed -i manifest.yml -e "s/APPENV/${{ inputs.environment }}/g"
+          sed -i manifest.yml -e "s/SERVICEMANAGER/${{ inputs.service-manager-url }}/g"
+          sed -i manifest.yml -e "s/MIGRATION_COMMAND/migrate/g"
+          cat manifest.yml
+          echo "unique=$unique" >> $GITHUB_ENV
+
+      - name: Run Migration
+        id: run-migration
+        run: |
+          kubectl apply -f manifest.yml        
+          namespace=${{ inputs.namespace }}
+
+          pod=${{ inputs.pod }}-migration-$namespace-$unique
+          echo "pod=$pod"
+          i=0
+          while true
+          do
+              status=$(kubectl get pods -n $namespace | grep $pod | awk '{print $3}')
+              echo $status
+              if [ -n "$status" ]
+              then
+                  if [ "$status" != "Pending" ] && [ "$status" != "ContainerCreating" ]
+                  then
+                      break
+                  fi
+              fi
+              i=$i++           
+              if [ "$i" = "60" ]
+              then
+                  break
+              fi
+              sleep 5
+          done
+          kubectl logs -f -n $namespace $pod
+          status=$(kubectl get pods -n $namespace | grep $pod | awk '{print $3}')
+
+          currentMigration=$(kubectl logs -n $namespace $pod | grep 'CURRENT_MIGRATION' | cut -d= -f2)
+          migrationsToApply=$(kubectl logs -n $namespace $pod | grep 'MIGRATIONS_TO_APPLY' | cut -d= -f2)
+          echo "migrations-to-apply=$migrationsToApply" >> $GITHUB_OUTPUT
+          echo "current-migration=$currentMigration" >> $GITHUB_OUTPUT
+          echo $status
+          kubectl delete pod -n $namespace $pod
+          if [ "$status" != "Completed" ]
+          then
+              exit 1
+          fi
