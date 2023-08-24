@@ -31,6 +31,7 @@ on:
         default: us-east-1
       pod:
         type: string
+        required: true
     secrets:
       PKG_TOKEN:
         required: true
