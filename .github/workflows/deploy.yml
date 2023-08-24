@@ -29,6 +29,9 @@ on:
         type: string
       namespace:
         type: string
+      service-name:
+        type: string
+        required: true
 jobs:
   deploy:
     name: Helm
@@ -61,6 +64,12 @@ jobs:
 
       - name: Replace values
         run: |
+          if [${{ inputs.environment }} === 'Live']
+          then
+            sed -i helm/values.yaml -e "s|<serviceName>|${{ inputs.service-name }}-Live|g"
+          else
+             sed -i helm/values.yaml -e "s|<serviceName>|${{ inputs.service-name }}|g"
+          fi
           sed -i helm/values.yaml -e "s|<imageTag>|${{ inputs.image-tag }}|g"
           sed -i helm/values.yaml -e "s|<envUpper>|${{ inputs.environment }}|g"
           sed -i helm/values.yaml -e "s|<envClusterSuffix>|${{ inputs.cluster-suffix }}|g"
@@ -70,4 +79,4 @@ jobs:
 
       - name: Deploy helm release
         run: |
-          helm upgrade assets-queue-service helm/chart -n ${{ inputs.namespace }} --atomic --install -f helm/values.yaml
+          helm upgrade ${{ inputs.service-name }} helm/chart -n ${{ inputs.namespace }} --atomic --install -f helm/values.yaml
