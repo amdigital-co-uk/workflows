@@ -64,7 +64,7 @@ jobs:
 
       - name: Replace values
         run: |
-          if [['${{ inputs.environment }}' == 'Live']]
+          if [[ '${{ inputs.environment }}' == 'Live' ]]
           then
             sed -i helm/values.yaml -e "s|<serviceName>|${{ inputs.service-name }}-live|g"
           else
