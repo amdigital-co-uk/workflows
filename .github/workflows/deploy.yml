@@ -64,7 +64,15 @@ jobs:
 
       - name: Replace values
         run: |
+          input="${{ inputs.environment }}"
+
+          if [[ $input = QA* ]]
+          then
+            input="QA"
+          fi
+
           sed -i helm/values.yaml -e "s|<imageTag>|${{ inputs.image-tag }}|g"
+          sed -i helm/values.yaml -e "s|<baseEnvUpper>|$input|g"
           sed -i helm/values.yaml -e "s|<envUpper>|${{ inputs.environment }}|g"
           sed -i helm/values.yaml -e "s|<envClusterSuffix>|${{ inputs.cluster-suffix }}|g"
           sed -i helm/values.yaml -e "s|<envGlobalSuffix>|${{ inputs.global-suffix }}|g"
