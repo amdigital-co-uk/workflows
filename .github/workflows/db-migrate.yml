@@ -74,7 +74,9 @@ jobs:
         run: aws eks update-kubeconfig --name ${{ inputs.cluster }} --region ${{ inputs.region }}
       
       - name: Output config
-        run: kubectl config view
+        run: |
+          kubectl config view 
+          kubectl get pods -n ${{ inputs.namespace }}        
         
       - name: Create manifest
         run: |
