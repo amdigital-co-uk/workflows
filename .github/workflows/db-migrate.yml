@@ -72,7 +72,10 @@ jobs:
 
       - name: Configure EKS Cluster access
         run: aws eks update-kubeconfig --name ${{ inputs.cluster }} --region ${{ inputs.region }}
-
+      
+      - name: Output config
+        run: kubectl config view
+        
       - name: Create manifest
         run: |
           unique=$(date +%s)
