@@ -1,0 +1,54 @@
+name: Create Issue On Deployment Failure
+
+on:
+    workflow_call:
+        inputs:
+            github-sha:
+                type: string
+                required: true
+            github-ref:
+                type: string
+                required: true
+
+jobs:
+    create-issue:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Create Issue or Update Existing Issue
+            uses: actions/github-script@v5
+            with:
+              github-token: ${{ secrets.GITHUB_TOKEN }}
+              script: |
+                const fs = require('fs');
+                const branchName = "${{ inputs.github-ref }}".split('/').pop();
+                const issueTitle = "Workflow Failed";
+                const issueBody = "root cause: ${{ inputs.github-sha }}"
+                const labels = ["incident"];
+    
+                const issues = await github.rest.issues.listForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  labels: 'incident',
+                });
+    
+                const existingIssue = issues.data.find(issue => issue.title === issueTitle);
+    
+                if (existingIssue) {
+                  const updatedBody = existingIssue.body + "\nroot cause: ${{ inputs.github-sha }}";
+                  
+                  await github.rest.issues.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: existingIssue.number,
+                    body: updatedBody
+                  });
+                } else {
+                  const newIssue = await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: issueTitle,
+                    body: issueBody,
+                    labels: labels
+                  });
+                }    

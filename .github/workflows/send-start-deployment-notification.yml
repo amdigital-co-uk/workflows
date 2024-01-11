@@ -1,0 +1,29 @@
+name: Send Start Deployment Message
+
+on:
+    workflow_call:
+        inputs:
+            headsha:
+                description: "Head Sha for PR. Used to get the PR body"
+                type: string
+                required: true
+            repo:
+                type: string
+                required: true
+            runid:
+                type: string
+                required: true
+jobs:
+    send-message:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Get PR Data
+            uses: 8BitJonny/gh-get-current-pr@2.2.0
+            id: pr
+            with:
+              sha: ${{ inputs.headsha }}
+    
+          - name: Send Start Notification to Teams
+            env:
+              PR_BODY: '${{ steps.pr.outputs.pr_body }}[[#Workflow]]http://github.com/${{inputs.repo}}/actions/runs/${{inputs.runid}}'
+            run: 'curl -H "Content-Type: text/plain" -d "$PR_BODY" https://deploymentnotificationhub.azurewebsites.net/api/DeploymentStarted' 
