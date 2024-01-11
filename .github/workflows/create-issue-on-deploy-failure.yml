@@ -3,13 +3,10 @@ name: Create Issue On Deployment Failure
 on:
     workflow_call:
         inputs:
-            GITHUB_TOKEN:
+            github-sha:
                 type: string
                 required: true
-            GITHUB_SHA:
-                type: string
-                required: true
-            GITHUB_REF:
+            github-ref:
                 type: string
                 required: true
 
@@ -20,12 +17,12 @@ jobs:
           - name: Create Issue or Update Existing Issue
             uses: actions/github-script@v5
             with:
-              github-token: ${{ inputs.GITHUB_TOKEN }}
+              github-token: ${{ secrets.GITHUB_TOKEN }}
               script: |
                 const fs = require('fs');
-                const branchName = process.env.GITHUB_REF.split('/').pop();
+                const branchName = ${{ inputs.github-ref }}.split('/').pop();
                 const issueTitle = "Workflow Failed";
-                const issueBody = `root cause: ${process.env.GITHUB_SHA}`;
+                const issueBody = `root cause: ${ ${{ inputs.github-sha }} }`;
                 const labels = ["incident"];
     
                 const issues = await github.rest.issues.listForRepo({
@@ -38,7 +35,8 @@ jobs:
                 const existingIssue = issues.data.find(issue => issue.title === issueTitle);
     
                 if (existingIssue) {
-                  const updatedBody = existingIssue.body + "root cause: " + process.env.GITHUB_SHA;
+                  const updatedBody = existingIssue.body + "\nroot cause: " + ${{ inputs.github-sha }};
+                  
                   await github.rest.issues.update({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
