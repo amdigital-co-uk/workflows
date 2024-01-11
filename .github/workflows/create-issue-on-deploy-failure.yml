@@ -9,9 +9,6 @@ on:
             github-ref:
                 type: string
                 required: true
-        secrets:
-            GITHUB_TOKEN:
-                required: true
 
 jobs:
     create-issue:
