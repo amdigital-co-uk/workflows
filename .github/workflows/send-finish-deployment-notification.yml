@@ -1,0 +1,23 @@
+name: Send Finish Deployment Message
+
+on:
+    workflow_call:
+        inputs:
+            headsha:
+                description: "Head Sha for PR. Used to get the PR body"
+                type: string
+                required: true
+
+jobs:
+    send-message:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Get PR Data
+            uses: 8BitJonny/gh-get-current-pr@2.2.0
+            id: PR
+            with:
+              sha: ${{ inputs.headsha }}
+          - name: Send Completed Notification to Teams
+            env:
+              PR_BODY: '${{ steps.pr.outputs.pr_body }}'
+            run: 'curl -H "Content-Type: text/plain" -d "$PR_BODY" https://deploymentnotificationhub.azurewebsites.net/api/DeploymentFinished'        
