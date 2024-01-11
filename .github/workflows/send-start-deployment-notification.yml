@@ -1,4 +1,4 @@
-name: Send Satrt Deployment Message
+name: Send Start Deployment Message
 
 on:
     workflow_call:
