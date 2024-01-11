@@ -20,9 +20,9 @@ jobs:
               github-token: ${{ secrets.GITHUB_TOKEN }}
               script: |
                 const fs = require('fs');
-                const branchName = ${{ inputs.github-ref }}.split('/').pop();
+                const branchName = "${{ inputs.github-ref }}".split('/').pop();
                 const issueTitle = "Workflow Failed";
-                const issueBody = `root cause: ${ ${{ inputs.github-sha }} }`;
+                const issueBody = "root cause: ${{ inputs.github-sha }}"
                 const labels = ["incident"];
     
                 const issues = await github.rest.issues.listForRepo({
@@ -35,7 +35,7 @@ jobs:
                 const existingIssue = issues.data.find(issue => issue.title === issueTitle);
     
                 if (existingIssue) {
-                  const updatedBody = existingIssue.body + "\nroot cause: " + ${{ inputs.github-sha }};
+                  const updatedBody = existingIssue.body + "\nroot cause: ${{ inputs.github-sha }}";
                   
                   await github.rest.issues.update({
                     owner: context.repo.owner,
