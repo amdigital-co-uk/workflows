@@ -36,7 +36,7 @@ jobs:
           envLower=$(echo $env | tr '[:upper:]' '[:lower:]')
           cluster="quartex-production"
           clusterSuffix="-live.live.svc.cluster.local"
-          globalSuffix=".quartexcollectins.com"
+          globalSuffix=".quartexcollections.com"
           esUrl="http://elasticsearch-internal.quartex.uk"
 
           if [[ $envLower == qa* ]] 
