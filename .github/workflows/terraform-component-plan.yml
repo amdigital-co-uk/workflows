@@ -147,7 +147,7 @@ jobs:
           fi
 
       - name: Terraform Plan
-        if: '!contains(github.event.pull_request.labels.*.name, "destroy")'
+        if: "!contains(github.event.pull_request.labels.*.name, 'destroy')"
         id: plan
         working-directory: components/${{ inputs.component }}
         env:
