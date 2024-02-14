@@ -38,6 +38,14 @@ on:
       aws-role-arn:
         required: true
         type: string
+      checkov-enabled:
+        type: boolean
+        default: false
+        required: false
+      checkov-skip-checks:
+        type: string
+        default: ""
+        required: false
 
 jobs:
   tf-plan:
@@ -46,6 +54,17 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
+
+      - name: Run Checkov action
+        if: ${{ inputs.checkov-enabled }}
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: 'components/${{ inputs.component }}'
+          var_file: 'envs/prod.tfvars'
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+          skip_check: ${{ inputs.checkov-skip-checks }}
 
       - name: Set workspace based on branch
         env:
@@ -128,6 +147,7 @@ jobs:
           fi
 
       - name: Terraform Plan
+        if: '!contains(github.event.pull_request.labels.*.name, "destroy")'
         id: plan
         working-directory: components/${{ inputs.component }}
         env:
@@ -135,7 +155,17 @@ jobs:
         run: |
           terraform plan -no-color -var-file=envs/$TF_WORKSPACE.tfvars -out "${{ inputs.plan-id }}.tfplan" | tee ${{ github.workspace }}/plan.out
           aws s3 cp "${{ inputs.plan-id }}.tfplan" "s3://${{ inputs.s3-bucket }}${{ inputs.s3-bucket-prefix }}/${{ inputs.component }}/$TF_WORKSPACE/${{ inputs.plan-id }}.tfplan"
-          
+
+      - name: Terraform Destroy
+        if: contains(github.event.pull_request.labels.*.name, 'destroy')
+        id: destroy
+        working-directory: components/${{ inputs.component }}
+        env:
+          TF_WORKSPACE: ${{ env.WORKSPACE }}
+        run: |
+          terraform plan -no-color -var-file=envs/$TF_WORKSPACE.tfvars -out "${{ inputs.plan-id }}.tfplan" -destroy | tee ${{ github.workspace }}/plan.out
+          aws s3 cp "${{ inputs.plan-id }}.tfplan" "s3://${{ inputs.s3-bucket }}${{ inputs.s3-bucket-prefix }}/${{ inputs.component }}/$TF_WORKSPACE/${{ inputs.plan-id }}.tfplan"
+      
       - name: Format plan
         id: format-plan
         run: |
