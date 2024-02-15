@@ -55,17 +55,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Run Checkov action
-        if: ${{ inputs.checkov-enabled }}
-        id: checkov
-        uses: bridgecrewio/checkov-action@master
-        with:
-          directory: 'components/${{ inputs.component }}'
-          var_file: 'envs/prod.tfvars'
-          output_format: cli,sarif
-          output_file_path: console,results.sarif
-          skip_check: ${{ inputs.checkov-skip-checks }}
-
       - name: Set workspace based on branch
         env:
           REF: ${{ github.ref_name }}
@@ -145,6 +134,17 @@ jobs:
             echo Getting secret ${{ inputs.aws-secret-name }}
             aws secretsmanager get-secret-value --secret-id "${{ inputs.aws-secret-name }}" --query SecretString --output text > secrets.auto.tfvars
           fi
+
+      - name: Run Checkov security checks
+        if: ${{ inputs.checkov-enabled }}
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: 'components/${{ inputs.component }}'
+          var_file: 'envs/${{ env.WORKSPACE }}.tfvars'
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+          skip_check: ${{ inputs.checkov-skip-checks }}
 
       - name: Terraform Plan
         if: "!contains(github.event.pull_request.labels.*.name, 'destroy')"
