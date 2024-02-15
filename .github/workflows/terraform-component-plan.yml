@@ -187,13 +187,15 @@ jobs:
 
       - name: Post plan as a comment
         uses: actions/github-script@v6
+        env:
+          HEADER: ${{ contains(github.event.pull_request.labels.*.name, 'destroy') && 'Destroy' || 'Plan' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const plan = fs.readFileSync('plan.out');
             const summary = fs.readFileSync('summary.out');
-            const output = `### Infrastructure plan: ${{ inputs.COMPONENT }}
+            const output = `### ${{ env.HEADER }} Infrastructure: ${{ inputs.COMPONENT }}
             #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`

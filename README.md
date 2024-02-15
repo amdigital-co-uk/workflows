@@ -15,6 +15,7 @@ This is an experimental replacement for [quartex-workflows](https://github.com/a
 Note that our secrets are defined at organisation level. So whilst shouldn't need defining within the repository, they do need to be explicitly passed in to the called workflow.
 
 - [Shared .NET workflows](./DOTNET.md)
+- [Shared Terraform workflows](./TERRAFORM.md)
 - [Generic Docker build and push to ECR](./OTHER.md#build-a-docker-application-and-push-to-ecr)
 - [Publish an AWS Lambda using Serverless](./OTHER.md#deploy-a-nodejs-lambda-function-using-docker--serverless)
 - [Run NodeJS unit tests](./OTHER.md#run-unit-tests-for-a-nodejs-application)
