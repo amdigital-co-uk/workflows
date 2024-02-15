@@ -22,7 +22,7 @@ Finally, it is also possible to configure Checkov to run on the terraform files.
       component: COMPONENT
       plan-id: ${{ github.event.number }}
       aws-role-arn: ${{ vars.ROLE_ARN }}
-      terraform-version: 1.3.7              # Optional, defaults to 1.15
+      terraform-version: 1.3.7              # Optional, defaults to 1.1.5
       use-aws-secret: true                  # Optional, defaults to false. If set to true, also populate the below
       aws-secret-name: secret/key           # Optional, the name of the secret in AWS Secrets
       append-workspace-to-secret: false     # Optional, defaults to false. If true, workspace name gets appended to the secret name
@@ -50,7 +50,7 @@ jobs:
       component: COMPONENT
       plan-id: ${{ github.event.number }}
       aws-role-arn: ${{ vars.ROLE_ARN }}
-      terraform-version: 1.3.7              # Optional, defaults to 1.15
+      terraform-version: 1.3.7              # Optional, defaults to 1.1.5
       s3-bucket: my-s3-bucket               # Optional, defaults to our standardd bucket. S3 bucket to store the plan in
       s3-key: /plans                        # Optional, defaults to /plans. S3 path to store for the plan in
 
