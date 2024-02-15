@@ -38,6 +38,14 @@ on:
       aws-role-arn:
         required: true
         type: string
+      checkov-enabled:
+        type: boolean
+        default: false
+        required: false
+      checkov-skip-checks:
+        type: string
+        default: ""
+        required: false
 
 jobs:
   tf-plan:
@@ -127,7 +135,19 @@ jobs:
             aws secretsmanager get-secret-value --secret-id "${{ inputs.aws-secret-name }}" --query SecretString --output text > secrets.auto.tfvars
           fi
 
+      - name: Run Checkov security checks
+        if: ${{ inputs.checkov-enabled }}
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: 'components/${{ inputs.component }}'
+          var_file: 'envs/${{ env.WORKSPACE }}.tfvars'
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+          skip_check: ${{ inputs.checkov-skip-checks }}
+
       - name: Terraform Plan
+        if: "!contains(github.event.pull_request.labels.*.name, 'destroy')"
         id: plan
         working-directory: components/${{ inputs.component }}
         env:
@@ -135,7 +155,17 @@ jobs:
         run: |
           terraform plan -no-color -var-file=envs/$TF_WORKSPACE.tfvars -out "${{ inputs.plan-id }}.tfplan" | tee ${{ github.workspace }}/plan.out
           aws s3 cp "${{ inputs.plan-id }}.tfplan" "s3://${{ inputs.s3-bucket }}${{ inputs.s3-bucket-prefix }}/${{ inputs.component }}/$TF_WORKSPACE/${{ inputs.plan-id }}.tfplan"
-          
+
+      - name: Terraform Destroy
+        if: contains(github.event.pull_request.labels.*.name, 'destroy')
+        id: destroy
+        working-directory: components/${{ inputs.component }}
+        env:
+          TF_WORKSPACE: ${{ env.WORKSPACE }}
+        run: |
+          terraform plan -no-color -var-file=envs/$TF_WORKSPACE.tfvars -out "${{ inputs.plan-id }}.tfplan" -destroy | tee ${{ github.workspace }}/plan.out
+          aws s3 cp "${{ inputs.plan-id }}.tfplan" "s3://${{ inputs.s3-bucket }}${{ inputs.s3-bucket-prefix }}/${{ inputs.component }}/$TF_WORKSPACE/${{ inputs.plan-id }}.tfplan"
+      
       - name: Format plan
         id: format-plan
         run: |
@@ -157,13 +187,15 @@ jobs:
 
       - name: Post plan as a comment
         uses: actions/github-script@v6
+        env:
+          HEADER: ${{ contains(github.event.pull_request.labels.*.name, 'destroy') && 'Destroy' || 'Plan' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const plan = fs.readFileSync('plan.out');
             const summary = fs.readFileSync('summary.out');
-            const output = `### Infrastructure plan: ${{ inputs.COMPONENT }}
+            const output = `### ${{ env.HEADER }} Infrastructure: ${{ inputs.COMPONENT }}
             #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
