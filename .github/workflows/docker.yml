@@ -39,8 +39,6 @@ on:
     secrets:
       PKG_TOKEN:
         required: false
-      AWS_ROLE_ARN:
-        required: true
 
 jobs:
   build:
