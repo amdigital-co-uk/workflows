@@ -9,7 +9,7 @@ Default behaviour when setting `branch-threshold` is to report test coverage and
 ```yml
 jobs:
   xunit:
-    uses: amdigital-co-uk/quartex-workflows/.github/workflows/xunit.yml@v1
+    uses: amdigital-co-uk/workflows/.github/workflows/xunit.yml@v1
     with:
       docker-compose: Quartex.Sample.Service.IntegrationTests/docker-compose.yml
       branch-threshold: 80
@@ -26,7 +26,7 @@ If coverage goes down, you see a failure; if it is maintained or improved, the n
 ```yml
 jobs:
   xunit:
-    uses: amdigital-co-uk/quartex-workflows/.github/workflows/xunit.yml@v1
+    uses: amdigital-co-uk/workflows/.github/workflows/xunit.yml@v1
     with:
       docker-compose: Quartex.Sample.Service.IntegrationTests/docker-compose.yml
       coverage-s3-path: s3://my-s3-bucket/code-coverage-reporting/my-repo.csv # this path should be a unique CSV file for each repo
@@ -42,7 +42,7 @@ jobs:
 ```yml
 jobs:
   nuget:
-    uses: amdigital-co-uk/quartex-workflows/.github/workflows/nuget.yml@v1
+    uses: amdigital-co-uk/workflows/.github/workflows/nuget.yml@v1
     with:
       pkg-src: https://nuget.pkg.github.com/amdigital-co-uk/index.json
       projects: "Quartex.Sample.Common Quartex.Sample.Interfaces"
@@ -59,7 +59,7 @@ Note this assumes our standard format of `Dockerfile`. This allows all our .NET 
 jobs:
   dotnet:
     if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
-    uses: amdigital-co-uk/quartex-workflows/.github/workflows/dotnet.yml@v1
+    uses: amdigital-co-uk/workflows/.github/workflows/dotnet.yml@v1
     with:
       ref: ${{ github.ref }}
       project: Quartex.Sample.Service
@@ -69,7 +69,7 @@ jobs:
       docker-tag: latest
       ecr-region-1: us-east-1
       ecr-region-1: us-east-2
-      aws-role-arn: ${{ vars.PIPELINE_TESTS_ARN }}
+      aws-role-arn: ${{ vars.PIPELINE_ECR_ARN }}
       configs: org/config-repo # Optional: specify a repo to checkout and retrieve JSON configs from
     secrets:
       PKG_TOKEN: ${{ secrets.PKG_TOKEN }}

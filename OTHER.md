@@ -10,7 +10,7 @@ This currently assumes a branching strategy of `stage/{name}` >> tagname `{name}
 jobs:
   build:
     if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
-    uses: amdigital-co-uk/quartex-workflows/.github/workflows/docker.yml@v1
+    uses: amdigital-co-uk/workflows/.github/workflows/docker.yml@v1
     with:
       ref: ${{ github.ref }}
       docker-namespace: samples
@@ -20,7 +20,7 @@ jobs:
       build-npmrc: true
       ecr-region-1: us-east-1
       ecr-region-2: us-east-2
-      aws-role-arn: ${{ vars.PIPELINE_TESTS_ARN }}
+      aws-role-arn: ${{ vars.PIPELINE_ECR_ARN }}
     secrets:
       PKG_TOKEN: ${{ secrets.PKG_TOKEN }}
 ```
@@ -31,7 +31,7 @@ jobs:
 jobs:
   build:
     if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
-    uses: amdigital-co-uk/quartex-workflows/.github/workflows/node-lambda.yml@v1
+    uses: amdigital-co-uk/workflows/.github/workflows/node-lambda.yml@v1
     with:
       ref: ${{ github.ref }}
       docker-namespace: qtfn
@@ -39,7 +39,7 @@ jobs:
       stage: live
       ecr-region-1: us-east-1
       ecr-region-2: us-east-2
-      aws-role-arn: ${{ vars.PIPELINE_TESTS_ARN }}
+      aws-role-arn: ${{ vars.PIPELINE_ECR_ARN }}
 ```
 
 ## Run unit tests for a NodeJS application
@@ -48,7 +48,7 @@ jobs:
 jobs:
   mocha:
     if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
-    uses: amdigital-co-uk/quartex-workflows/.github/workflows/node-tests.yml@v1
+    uses: amdigital-co-uk/workflows/.github/workflows/node-tests.yml@v1
     with:
       coverage-s3-path: s3://my-s3-bucket/code-coverage-reporting/my-repo.csv # this path should be a unique CSV file for each repo
       debug: TRUE
