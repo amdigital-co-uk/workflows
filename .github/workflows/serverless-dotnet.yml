@@ -60,7 +60,7 @@ jobs:
           include-prerelease: true
       
       - name: Publish .NET application
-        run: dotnet publish $PROJECT/$PROJECT.csproj --output _publish --configuration "Release" --framework "net6.0" /p:GenerateRuntimeConfigurationFiles=true --runtime linux-x64 --self-contained false
+        run: dotnet publish $PROJECT/$PROJECT.csproj --output _publish --configuration "Release" /p:GenerateRuntimeConfigurationFiles=true --runtime linux-x64 --self-contained false
       
       - name: Create Package
         working-directory: _publish
