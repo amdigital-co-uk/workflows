@@ -12,6 +12,10 @@ on:
       stage:       # Serverless Stage
         required: true
         type: string
+      dotnet-version:
+        required: false
+        type: string
+        default: '6.0.x'
       node-version:
         type: string
         default: '14.x'
@@ -52,7 +56,7 @@ jobs:
       # Publish .NET project and create Zip
       - uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: ${{ inputs.dotnet-version }}
           include-prerelease: true
       
       - name: Publish .NET application
