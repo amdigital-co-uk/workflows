@@ -30,6 +30,10 @@ on:
         type: boolean
         description: "Flag that determines if we're promoting or rolling back, true = promote, false = rollback"
         default: false
+      argo-rollouts-version:
+        type: string
+        description: "Version of Argo Rollouts to use"
+        default: "v1.5.1"
 
 jobs:
   promote_or_rollback:
@@ -48,7 +52,7 @@ jobs:
           chmod +x kubectl
           mv ./kubectl /usr/local/bin/kubectl
 
-          curl -LO https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-linux-amd64
+          curl -LO https://github.com/argoproj/argo-rollouts/releases/download/${{inputs.argo-rollouts-version}}/kubectl-argo-rollouts-linux-amd64
           chmod +x ./kubectl-argo-rollouts-linux-amd64
           mv ./kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
 
