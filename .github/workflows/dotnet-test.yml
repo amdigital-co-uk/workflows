@@ -14,12 +14,9 @@ on:
         required: false
         type: string
         default: null
-      region:
+      aws-region:
         type: string
         default: us-east-1
-      aws-role-arn:
-        required: true
-        type: string
       config-file-s3-root:
         required: false
         type: string
@@ -31,6 +28,8 @@ on:
         type: string
     secrets:
       PKG_TOKEN:
+        required: true
+      AWS_ROLE_ARN:
         required: true
 
 jobs:
@@ -47,9 +46,9 @@ jobs:
         if: ${{ inputs.config-file != ''}}
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ inputs.aws-role-arn }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-duration-seconds: 900
-          aws-region: ${{ inputs.region }}
+          aws-region: ${{ inputs.aws-region }}
 
       - name: Copy config file from s3 
         if: ${{ inputs.config-file != ''}}
