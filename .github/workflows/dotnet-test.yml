@@ -30,7 +30,6 @@ on:
       PKG_TOKEN:
         required: true
       AWS_ROLE_ARN:
-        required: true
 
 jobs:
   dotnet-test:
@@ -51,7 +50,7 @@ jobs:
           aws-region: ${{ inputs.aws-region }}
 
       - name: Copy config file from s3 
-        if: ${{ inputs.config-file != ''}}
+        if: ${{ inputs.config-file != '' && inputs.config-file-s3-root != ''}}
         env:
           CONFIG_FILE: ${{ inputs.config-file }}
           CONFIG_FILE_S3_ROOT: ${{ inputs.config-file-s3-root }}
@@ -60,7 +59,7 @@ jobs:
 
       # Copy config files to projects
       - name: Copy config file to projects
-        if: ${{ inputs.copy-config-file-to-projects != '' }}
+        if: ${{ inputs.config-file && inputs.copy-config-file-to-projects != '' }}
         env:
           PROJECTS: ${{ inputs.copy-config-file-to-projects }}
           CONFIG_FILE: ${{ inputs.config-file }}
