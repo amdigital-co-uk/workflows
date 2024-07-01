@@ -30,7 +30,10 @@ on:
       PKG_TOKEN:
         required: true
       AWS_ROLE_ARN:
+<<<<<<< HEAD
         required: false
+=======
+>>>>>>> ae70af0 (Adjust required inputs and checks)
 
 jobs:
   dotnet-test:
