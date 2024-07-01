@@ -31,9 +31,13 @@ on:
         required: true
       AWS_ROLE_ARN:
 <<<<<<< HEAD
+<<<<<<< HEAD
         required: false
 =======
 >>>>>>> ae70af0 (Adjust required inputs and checks)
+=======
+        required: false
+>>>>>>> dcdae33 (Make AWS_ROLE_ARN not required)
 
 jobs:
   dotnet-test:
