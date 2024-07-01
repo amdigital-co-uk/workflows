@@ -14,6 +14,15 @@ on:
         required: false
         type: string
         default: null
+      config-file-s3-root:
+        required: false
+        type: string
+      config-file:
+        required: false
+        type: string
+      copy-config-file-to-projects:
+        required: false
+        type: string
     secrets:
       PKG_TOKEN:
         required: true
@@ -26,6 +35,27 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      # Copy config files from S3
+      - name: Copy config file from s3 
+        if: ${{ inputs.config-file != ''}}
+        env:
+          CONFIG_FILE: ${{ inputs.config-file }}
+          CONFIG_FILE_S3_ROOT: ${{ inputs.config-file-s3-root }}
+        run: |
+          aws s3 cp $CONFIG_FILE_S3_ROOT/$CONFIG_FILE .
+
+      # Copy config files to projects
+      - name: Copy config file to projects
+        if: ${{ inputs.copy-config-file-to-projects != '' }}
+        env:
+          PROJECTS: ${{ inputs.copy-config-file-to-projects }}
+          CONFIG_FILE: ${{ inputs.config-file }}
+        run: |
+          for project in $PROJECTS
+          do
+            cp $CONFIG_FILE $project
+          done
 
       # Spins up services via Docker-compose
       - name: Start containers
