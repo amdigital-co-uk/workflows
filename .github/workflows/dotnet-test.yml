@@ -41,7 +41,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Copy config files from S3
+      # Configure AWS credentials
       - name: Configure AWS credentials
         if: ${{ inputs.config-file != ''}}
         uses: aws-actions/configure-aws-credentials@v2
@@ -50,6 +50,7 @@ jobs:
           role-duration-seconds: 900
           aws-region: ${{ inputs.aws-region }}
 
+      # Copy config files from S3
       - name: Copy config file from s3 
         if: ${{ inputs.config-file != '' && inputs.config-file-s3-root != ''}}
         env:
