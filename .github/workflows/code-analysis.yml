@@ -17,11 +17,25 @@ on:
         default: amdigital-co-uk
       project:  
         type: string
+      aws-region:
+        type: string
+        default: us-east-1
+      config-file-s3-root:
+        required: false
+        type: string
+      config-file:
+        required: false
+        type: string
+      copy-config-file-to-projects:
+        required: false
+        type: string
     secrets:
       PKG_TOKEN:
         required: true
       SONAR_TOKEN:
         required: true
+      AWS_ROLE_ARN:
+        required: false
   
 jobs:
   codeAnalysis:
@@ -60,6 +74,35 @@ jobs:
         source-url: https://nuget.pkg.github.com/amdigital-co-uk/index.json
       env:
         NUGET_AUTH_TOKEN: ${{secrets.PKG_TOKEN}}
+
+    # Copy config files from S3
+    - name: Configure AWS credentials
+      if: ${{ inputs.config-file != ''}}
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        role-duration-seconds: 900
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Copy config file from s3 
+      if: ${{ inputs.config-file != '' && inputs.config-file-s3-root != ''}}
+      env:
+        CONFIG_FILE: ${{ inputs.config-file }}
+        CONFIG_FILE_S3_ROOT: ${{ inputs.config-file-s3-root }}
+      run: |
+        aws s3 cp $CONFIG_FILE_S3_ROOT/$CONFIG_FILE .
+
+    # Copy config files to projects
+    - name: Copy config file to projects
+      if: ${{ inputs.config-file && inputs.copy-config-file-to-projects != '' }}
+      env:
+        PROJECTS: ${{ inputs.copy-config-file-to-projects }}
+        CONFIG_FILE: ${{ inputs.config-file }}
+      run: |
+        for project in $PROJECTS
+        do
+          cp $CONFIG_FILE $project
+        done
 
     - name: Start containers
       if: ${{ inputs.docker-compose != '' }}
