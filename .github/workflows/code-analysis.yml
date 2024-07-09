@@ -29,6 +29,10 @@ on:
       copy-config-file-to-projects:
         required: false
         type: string
+      build-and-analyze-working-directory:
+        required: false
+        type: string
+        default: .
     secrets:
       PKG_TOKEN:
         required: true
@@ -109,6 +113,7 @@ jobs:
       run: docker compose -f ${{ inputs.docker-compose }} up -d
 
     - name: Build and analyze
+      working-directory: ${{ inputs.build-and-analyze-working-directory }}
       run: |
           dotnet-sonarscanner begin /k:"${{ inputs.organization }}_${{ inputs.project }}" /o:"${{ inputs.organization }}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"  /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
           dotnet build --no-incremental
