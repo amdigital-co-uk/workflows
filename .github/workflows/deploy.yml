@@ -32,6 +32,9 @@ on:
       service-name:
         type: string
         required: true
+      aws-secrets-prefix:
+        type: string
+        required: true
 jobs:
   deploy:
     name: Helm
@@ -77,6 +80,7 @@ jobs:
           sed -i helm/values.yaml -e "s|<envClusterSuffix>|${{ inputs.cluster-suffix }}|g"
           sed -i helm/values.yaml -e "s|<envGlobalSuffix>|${{ inputs.global-suffix }}|g"
           sed -i helm/values.yaml -e "s|<esUrl>|${{ inputs.elastic-search-url }}|g"
+          sed -i helm/values.yaml -e "s|<aws_secets>|${{ inputs.aws-secrets-prefix }}|g"
           cat helm/values.yaml
 
       - name: Deploy helm release
