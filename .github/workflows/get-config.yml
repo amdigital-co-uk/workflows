@@ -30,6 +30,7 @@ jobs:
         globalSuffix: ${{ steps.get-config.outputs.global-suffix }}
         esUrl: ${{ steps.get-config.outputs.es-url }}
         namespace: ${{ steps.get-config.outputs.namespace }}
+        awsSecretsPrefix: ${{ steps.get-config.outputs.aws-secrets-prefix }}
     steps:
       - name: Set Config Outputs
         id: get-config 
