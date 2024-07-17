@@ -18,8 +18,8 @@ on:
         value: ${{ jobs.get-config.outputs.esUrl }}
       namespace:
         value: ${{ jobs.get-config.outputs.namespace }}
-      aws_secrets:
-        value: ${{ jobs.get-config.outputs.aws_secrets }}
+      awsSecretsPrefix:
+        value: ${{ jobs.get-config.outputs.awsSecretsPrefix }}
 
 jobs:
   get-config:
@@ -40,14 +40,14 @@ jobs:
           clusterSuffix="-live.live.svc.cluster.local"
           globalSuffix=".quartexcollections.com"
           esUrl="http://elasticsearch-internal.quartex.uk"
-          aws_secrets="quartex/secrets/live"
+          awsSecretsPrefix="quartex/secrets/live"
 
           if [[ $envLower == qa* ]] 
           then
             cluster="quartex-development"
             clusterSuffix=""
             globalSuffix=".${envLower}.quartex.uk"
-            aws_secrets="quartex/secrets/qa"
+            awsSecretsPrefix="quartex/secrets/qa"
           fi
 
           if [[ $envLower == dev* ]] 
@@ -56,7 +56,7 @@ jobs:
             clusterSuffix=""
             globalSuffix=".${envLower}.quartex.uk"
             esUrl="http://elasticsearch.${envLower}:9200"
-            aws_secrets="quartex/development/${envLower}"
+            awsSecretsPrefix="quartex/development/${envLower}"
           fi
 
           echo "cluster=$cluster" >> $GITHUB_OUTPUT
@@ -64,4 +64,4 @@ jobs:
           echo "global-suffix=$globalSuffix" >> $GITHUB_OUTPUT
           echo "es-url=$esUrl" >> $GITHUB_OUTPUT
           echo "namespace=$envLower" >> $GITHUB_OUTPUT
-          echo "aws_secrets=$aws_secrets" >> $GITHUB_OUTPUT
+          echo "aws-secrets-prefix=$awsSecretsPrefix" >> $GITHUB_OUTPUT
