@@ -18,7 +18,7 @@ on:
         default: '6.0.x'
       node-version:
         type: string
-        default: '14.x'
+        default: 'lts'
       project:
         required: true
         type: string
@@ -102,7 +102,7 @@ jobs:
       - name: Setup Node and NPM
         uses: actions/setup-node@v3
         with:
-          node-version: '14.x'
+          node-version: '${{ inputs.node-version }}'
       
       # Install serverless node package
       - name: Install serverless
