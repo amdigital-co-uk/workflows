@@ -106,7 +106,7 @@ jobs:
       
       # Install serverless node package
       - name: Install serverless
-        run: npm i -g serverless
+        run: npm i -g serverless@3
 
       # Package up the application
       - name: Package 
