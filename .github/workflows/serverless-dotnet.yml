@@ -18,7 +18,7 @@ on:
         default: '6.0.x'
       node-version:
         type: string
-        default: 'lts'
+        default: '20'
       project:
         required: true
         type: string
