@@ -4,13 +4,10 @@ name: Build NuGET
 on:
   workflow_call:
     inputs:
-      skip-duplicate:   # Set to false to error when pushing duplicate versions
+      skip-duplicate: # Set to false to error when pushing duplicate versions
         required: true
         type: boolean
-      pkg-src:          # URL of private GitHub packages feed to push to
-        required: true
-        type: string
-      projects:         # Space-delimited string of .NET projects to build and pack
+      pkg-src: # URL of private GitHub packages feed to push to
         required: true
         type: string
     secrets:
@@ -24,7 +21,7 @@ jobs:
       # Checks-out repository
       - name: Checkout repository
         uses: actions/checkout@v3
-      
+
       # Login to GitHub packages
       - name: Login to GitHub packages
         uses: actions/setup-dotnet@v3
@@ -32,13 +29,14 @@ jobs:
           source-url: ${{ inputs.pkg-src }}
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.PKG_TOKEN }}
-      
+
       # Package libraries and push to GitHub packages
       - name: Create and push NuGet packages
         run: |
           flags="-k ${{secrets.GITHUB_TOKEN}} -s Source"
           [ "${{ inputs.skip-duplicate}}" = "true" ] && flags="$flags --skip-duplicate"
-          for project in ${{ inputs.projects }}
+          projects=$(grep -r "<PackageId>" --include="*.csproj" | cut -d: -f1 | cut -d/ -f1 | tr '\n' ' ')
+          for project in $projects
           do
             cd $project
             cp ../../nuget.config .
