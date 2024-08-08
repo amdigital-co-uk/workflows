@@ -10,6 +10,9 @@ on:
       pkg-src: # URL of private GitHub packages feed to push to
         required: true
         type: string
+      projects:         # Space-delimited string of .NET projects to build and pack
+        required: true
+        type: string
     secrets:
       PKG_TOKEN:
         required: true
@@ -35,7 +38,11 @@ jobs:
         run: |
           flags="-k ${{secrets.GITHUB_TOKEN}} -s Source"
           [ "${{ inputs.skip-duplicate}}" = "true" ] && flags="$flags --skip-duplicate"
-          projects=$(grep -r "<PackageId>" --include="*.csproj" | cut -d: -f1 | cut -d/ -f1 | tr '\n' ' ')
+          projects="${{ inputs.projects }}"
+          if [ -z "$projects" ] # if the string is zero length
+          then
+              projects=$(grep -r "<PackageId>" --include="*.csproj" | cut -d: -f1 | cut -d/ -f1 | tr '\n' ' ')
+          fi
           for project in $projects
           do
             cd $project
